@@ -99,6 +99,14 @@ func (s *serviceTracker) SetAPIAddress(apiAddress string) {
 	s.host.InternalAPIAddress = apiAddress
 }
 
+func (s *serviceTracker) GetAPIAddress() string {
+	s.mu.Lock()
+	addr := s.host.InternalAPIAddress
+	s.mu.Unlock()
+
+	return addr
+}
+
 func (s *serviceTracker) run() {
 	t := time.NewTicker(time.Second * 5)
 	for {
