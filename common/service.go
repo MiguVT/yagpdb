@@ -261,7 +261,12 @@ func (sp *servicePoller) GetGuildAddress(guildID int64) (string, error) {
 			shardID := int((guildID >> 22) % int64(v.BotDetails.TotalShards))
 
 			if ContainsIntSlice(v.BotDetails.RunningShards, shardID) {
-				return h.InternalAPIAddress, nil
+				addr := h.InternalAPIAddress
+				if addr == "" {
+					// InternalAPIAddress not set yet, use ServiceTracker fallback
+					addr = ServiceTracker.GetAPIAddress()
+				}
+				return addr, nil
 			}
 		}
 	}
