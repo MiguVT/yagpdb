@@ -93,10 +93,12 @@ func (s *serviceTracker) RegisterService(t ServiceType, name string, details str
 }
 
 func (s *serviceTracker) SetAPIAddress(apiAddress string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+   s.mu.Lock()
+   defer s.mu.Unlock()
 
-	s.host.InternalAPIAddress = apiAddress
+   logger.Infof("[ServiceTracker] SetAPIAddress called with: %s", apiAddress)
+   s.host.InternalAPIAddress = apiAddress
+   logger.Infof("[ServiceTracker] InternalAPIAddress is now: %s", s.host.InternalAPIAddress)
 }
 
 func (s *serviceTracker) run() {
@@ -108,51 +110,56 @@ func (s *serviceTracker) run() {
 }
 
 func (s *serviceTracker) update() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+   s.mu.Lock()
+   defer s.mu.Unlock()
 
-	for _, v := range s.host.Services {
-		if v.botDetailsF == nil {
-			continue
-		}
+   logger.Infof("[ServiceTracker] update() called. InternalAPIAddress: %s", s.host.InternalAPIAddress)
 
-		botDetails, err := v.botDetailsF()
-		if err != nil {
-			logger.WithError(err).Error("failed retrieving extra service details")
-			v.BotDetails = &BotServiceDetails{}
-			continue
-		}
+   for _, v := range s.host.Services {
+	   if v.botDetailsF == nil {
+		   continue
+	   }
 
-		v.BotDetails = botDetails
-	}
+	   botDetails, err := v.botDetailsF()
+	   if err != nil {
+		   logger.WithError(err).Error("failed retrieving extra service details")
+		   v.BotDetails = &BotServiceDetails{}
+		   continue
+	   }
 
-	serialized, err := json.Marshal(s.host)
-	if err != nil {
-		logger.WithError(err).Error("failed marshaling service host")
-		return
-	}
+	   v.BotDetails = botDetails
+   }
 
-	err = RedisPool.Do(radix.FlatCmd(nil, "ZADD", ServicesRedisKey, time.Now().Unix(), serialized))
-	if err != nil {
-		logger.WithError(err).Error("failed updating service host")
-		return
-	}
+   serialized, err := json.Marshal(s.host)
+   if err != nil {
+	   logger.WithError(err).Error("failed marshaling service host")
+	   return
+   }
 
-	if !bytes.Equal(serialized, s.lastUpdate) {
-		err = RedisPool.Do(radix.FlatCmd(nil, "ZREM", ServicesRedisKey, s.lastUpdate))
-		if err != nil {
-			logger.WithError(err).Error("failed removing service host")
-			return
-		}
-	}
+   logger.Infof("[ServiceTracker] update() serializing ServiceHost: %s", string(serialized))
 
-	s.lastUpdate = serialized
+   err = RedisPool.Do(radix.FlatCmd(nil, "ZADD", ServicesRedisKey, time.Now().Unix(), serialized))
+   if err != nil {
+	   logger.WithError(err).Error("failed updating service host")
+	   return
+   }
 
-	err = RedisPool.Do(radix.FlatCmd(nil, "ZREMRANGEBYSCORE", ServicesRedisKey, 0, time.Now().Unix()-30))
-	if err != nil {
-		logger.WithError(err).Error("feailed clearing old service hosts")
-		return
-	}
+   if !bytes.Equal(serialized, s.lastUpdate) {
+	   err = RedisPool.Do(radix.FlatCmd(nil, "ZREM", ServicesRedisKey, s.lastUpdate))
+	   if err != nil {
+		   logger.WithError(err).Error("failed removing service host")
+		   return
+	   }
+   }
+
+   s.lastUpdate = serialized
+
+   err = RedisPool.Do(radix.FlatCmd(nil, "ZREMRANGEBYSCORE", ServicesRedisKey, 0, time.Now().Unix()-30))
+   if err != nil {
+	   logger.WithError(err).Error("feailed clearing old service hosts")
+	   return
+   }
+   logger.Info("[ServiceTracker] update() finished")
 }
 
 type servicePoller struct {
