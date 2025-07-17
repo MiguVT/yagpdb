@@ -117,7 +117,9 @@ func Init() {
 }
 
 func Run() {
+	log.Info("[run.Run] ENTERED run.Run()")
 	if flagDryRun {
+		log.Info("[run.Run] flagDryRun set, exiting early")
 		log.Println("This is a dry run, exiting")
 		return
 	}
@@ -136,11 +138,13 @@ func Run() {
 	commands.InitCommands()
 
 	if FlagGenCmdDocs {
+		log.Info("[run.Run] FlagGenCmdDocs set, exiting early")
 		GenCommandsDocs()
 		return
 	}
 
 	if flagGenConfigDocs {
+		log.Info("[run.Run] flagGenConfigDocs set, exiting early")
 		GenConfigDocs()
 		return
 	}
