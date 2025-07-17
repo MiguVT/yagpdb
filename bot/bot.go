@@ -114,33 +114,62 @@ func setup() {
 }
 
 func setupStandalone() {
-	if confFixedShardingConfig.GetString() == "" {
-		shardCount, err := ShardManager.GetRecommendedCount()
-		if err != nil {
-			panic("Failed getting shard count: " + err.Error())
-		}
-		totalShardCount = shardCount
-	} else {
-		fixedShardingID, totalShardCount = readFixedShardingConfig()
-		usingFixedSharding = true
-		ShardManager.SetNumShards(totalShardCount)
-	}
-	setupState()
+  logger.Info("[setupStandalone] INICIO")
 
-	EventLogger.init(totalShardCount)
-	eventsystem.InitWorkers(totalShardCount)
-	ReadyTracker.initTotalShardCount(totalShardCount)
+  logger.Info("[setupStandalone] Antes de confFixedShardingConfig.GetString()")
+  if confFixedShardingConfig.GetString() == "" {
+	  logger.Info("[setupStandalone] Antes de ShardManager.GetRecommendedCount()")
+	  shardCount, err := ShardManager.GetRecommendedCount()
+	  logger.Info("[setupStandalone] Después de ShardManager.GetRecommendedCount()")
+	  if err != nil {
+	   panic("Failed getting shard count: " + err.Error())
+	  }
+	  totalShardCount = shardCount
+  } else {
+	  logger.Info("[setupStandalone] Antes de readFixedShardingConfig()")
+	  fixedShardingID, totalShardCount = readFixedShardingConfig()
+	  logger.Info("[setupStandalone] Después de readFixedShardingConfig()")
+	  usingFixedSharding = true
+	  logger.Info("[setupStandalone] Antes de ShardManager.SetNumShards()")
+	  ShardManager.SetNumShards(totalShardCount)
+	  logger.Info("[setupStandalone] Después de ShardManager.SetNumShards()")
+  }
 
-	go EventLogger.run()
+  logger.Info("[setupStandalone] Antes de setupState()")
+  setupState()
+  logger.Info("[setupStandalone] Después de setupState()")
 
-	for i := 0; i < totalShardCount; i++ {
-		ReadyTracker.shardsAdded(i)
-	}
+  logger.Infof("[setupStandalone] Antes de EventLogger.init(%d)", totalShardCount)
+  EventLogger.init(totalShardCount)
+  logger.Info("[setupStandalone] Después de EventLogger.init()")
 
-	err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", totalShardCount))
-	if err != nil {
-		logger.WithError(err).Error("failed setting shard count")
-	}
+  logger.Infof("[setupStandalone] Antes de eventsystem.InitWorkers(%d)", totalShardCount)
+  eventsystem.InitWorkers(totalShardCount)
+  logger.Info("[setupStandalone] Después de eventsystem.InitWorkers()")
+
+  logger.Infof("[setupStandalone] Antes de ReadyTracker.initTotalShardCount(%d)", totalShardCount)
+  ReadyTracker.initTotalShardCount(totalShardCount)
+  logger.Info("[setupStandalone] Después de ReadyTracker.initTotalShardCount()")
+
+  logger.Info("[setupStandalone] Antes de lanzar goroutine EventLogger.run()")
+  go EventLogger.run()
+  logger.Info("[setupStandalone] Después de lanzar goroutine EventLogger.run()")
+
+  logger.Info("[setupStandalone] Antes de ReadyTracker.shardsAdded loop")
+  for i := 0; i < totalShardCount; i++ {
+	  ReadyTracker.shardsAdded(i)
+  }
+  logger.Info("[setupStandalone] Después de ReadyTracker.shardsAdded loop")
+
+  logger.Infof("[setupStandalone] Antes de RedisPool.Do SET yagpdb_total_shards = %d", totalShardCount)
+  err := common.RedisPool.Do(radix.FlatCmd(nil, "SET", "yagpdb_total_shards", totalShardCount))
+  if err != nil {
+	  logger.WithError(err).Error("failed setting shard count")
+  } else {
+	  logger.Info("[setupStandalone] SET yagpdb_total_shards OK")
+  }
+
+  logger.Info("[setupStandalone] FIN")
 }
 
 func readFixedShardingConfig() (id int, count int) {
