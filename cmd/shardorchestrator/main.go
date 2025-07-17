@@ -87,7 +87,9 @@ func main() {
 	}
 
 	api := rest.NewRESTAPI(orch, restAPIAddr+":7448")
+	logrus.Infof("[DEBUG] SetAPIAddress about to be called with: %s", restAPIAddr+":7448")
 	common.ServiceTracker.SetAPIAddress(restAPIAddr + ":7448")
+	logrus.Infof("[DEBUG] SetAPIAddress called with: %s", restAPIAddr+":7448")
 	common.ServiceTracker.RegisterService(common.ServiceTypeOrchestator, "Shard orchestrator", "", nil)
 
 	err = api.Run()
