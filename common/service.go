@@ -93,10 +93,10 @@ func (s *serviceTracker) RegisterService(t ServiceType, name string, details str
 }
 
 func (s *serviceTracker) SetAPIAddress(apiAddress string) {
-  s.mu.Lock()
-  s.host.InternalAPIAddress = apiAddress
-  s.mu.Unlock()
-  s.update()
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.host.InternalAPIAddress = apiAddress
 }
 
 func (s *serviceTracker) run() {
