@@ -49,41 +49,45 @@ func (p *Plugin) PluginInfo() *common.PluginInfo {
 }
 
 func (p *Plugin) CommonRun() {
+   serverLogger.Info("[internalapi] CommonRun() called")
 
-	muxer := goji.NewMux()
+   muxer := goji.NewMux()
 
-	// muxer.HandleFunc(pat.Get("/:guild/guild"), HandleGuild)
-	// muxer.HandleFunc(pat.Get("/:guild/botmember"), HandleBotMember)
-	// muxer.HandleFunc(pat.Get("/:guild/members"), HandleGetMembers)
-	// muxer.HandleFunc(pat.Get("/:guild/membercolors"), HandleGetMemberColors)
-	// muxer.HandleFunc(pat.Get("/:guild/onlinecount"), HandleGetOnlineCount)
-	// muxer.HandleFunc(pat.Get("/:guild/channelperms/:channel"), HandleChannelPermissions)
-	// muxer.HandleFunc(pat.Get("/node_status"), HandleNodeStatus)
-	// muxer.HandleFunc(pat.Post("/shard/:shard/reconnect"), HandleReconnectShard)
-	muxer.HandleFunc(pat.Get("/ping"), handlePing)
-	muxer.HandleFunc(pat.Post("/shutdown"), handleShutdown)
+   // muxer.HandleFunc(pat.Get(":/guild/guild"), HandleGuild)
+   // muxer.HandleFunc(pat.Get(":/guild/botmember"), HandleBotMember)
+   // muxer.HandleFunc(pat.Get(":/guild/members"), HandleGetMembers)
+   // muxer.HandleFunc(pat.Get(":/guild/membercolors"), HandleGetMemberColors)
+   // muxer.HandleFunc(pat.Get(":/guild/onlinecount"), HandleGetOnlineCount)
+   // muxer.HandleFunc(pat.Get(":/guild/channelperms/:channel"), HandleChannelPermissions)
+   // muxer.HandleFunc(pat.Get("/node_status"), HandleNodeStatus)
+   // muxer.HandleFunc(pat.Post("/shard/:shard/reconnect"), HandleReconnectShard)
+   muxer.HandleFunc(pat.Get("/ping"), handlePing)
+   muxer.HandleFunc(pat.Post("/shutdown"), handleShutdown)
 
-	// Debug stuff
-	muxer.HandleFunc(pat.Get("/debug/pprof/cmdline"), pprof.Cmdline)
-	muxer.HandleFunc(pat.Get("/debug/pprof/profile"), pprof.Profile)
-	muxer.HandleFunc(pat.Get("/debug/pprof/symbol"), pprof.Symbol)
-	muxer.HandleFunc(pat.Get("/debug/pprof/trace"), pprof.Trace)
-	muxer.HandleFunc(pat.Get("/debug/pprof/"), pprof.Index)
-	muxer.HandleFunc(pat.Get("/debug/pprof/:profile"), pprof.Index)
+   // Debug stuff
+   muxer.HandleFunc(pat.Get("/debug/pprof/cmdline"), pprof.Cmdline)
+   muxer.HandleFunc(pat.Get("/debug/pprof/profile"), pprof.Profile)
+   muxer.HandleFunc(pat.Get("/debug/pprof/symbol"), pprof.Symbol)
+   muxer.HandleFunc(pat.Get("/debug/pprof/trace"), pprof.Trace)
+   muxer.HandleFunc(pat.Get("/debug/pprof/"), pprof.Index)
+   muxer.HandleFunc(pat.Get("/debug/pprof/:profile"), pprof.Index)
 
-	// http.HandleFunc("/debug/pprof/", Index)
-	// http.HandleFunc("/debug/pprof/cmdline", Cmdline)
-	// http.HandleFunc("/debug/pprof/profile", Profile)
-	// http.HandleFunc("/debug/pprof/symbol", Symbol)
-	// http.HandleFunc("/debug/pprof/trace", Trace)
+   // http.HandleFunc("/debug/pprof/", Index)
+   // http.HandleFunc("/debug/pprof/cmdline", Cmdline)
+   // http.HandleFunc("/debug/pprof/profile", Profile)
+   // http.HandleFunc("/debug/pprof/symbol", Symbol)
+   // http.HandleFunc("/debug/pprof/trace", Trace)
 
-	for _, p := range common.Plugins {
-		if botRestPlugin, ok := p.(InternalAPIPlugin); ok {
-			botRestPlugin.InitInternalAPIRoutes(muxer)
-		}
-	}
+   for _, p := range common.Plugins {
+	   if botRestPlugin, ok := p.(InternalAPIPlugin); ok {
+		   serverLogger.Infof("[internalapi] InitInternalAPIRoutes for plugin: %T", p)
+		   botRestPlugin.InitInternalAPIRoutes(muxer)
+	   }
+   }
 
-	p.run(muxer)
+   serverLogger.Info("[internalapi] About to call run(muxer)")
+   p.run(muxer)
+   serverLogger.Info("[internalapi] Finished run(muxer)")
 }
 
 func (p *Plugin) run(muxer *goji.Mux) {
@@ -91,20 +95,25 @@ func (p *Plugin) run(muxer *goji.Mux) {
 		Handler: muxer,
 	}
 
-	// listen address excluding port
+	serverLogger.Info("[internalapi] run() called")
 	listenAddr := confBotrestListenAddr.GetString()
+	serverLogger.Infof("[internalapi] confBotrestListenAddr: %s", listenAddr)
 	if listenAddr == "" {
-		// default to safe loopback interface
+		serverLogger.Info("[internalapi] listenAddr empty, defaulting to 127.0.0.1")
 		listenAddr = "127.0.0.1"
 	}
 
+	serverLogger.Info("[internalapi] About to call createListener")
 	l, port, err := p.createListener(listenAddr)
 	if err != nil {
 		serverLogger.WithError(err).Panicf("failed starting internal http server on %s:%d", listenAddr, port)
 		return
 	}
+	serverLogger.Infof("[internalapi] Got listener on %s:%d", listenAddr, port)
 
+	serverLogger.Infof("[internalapi] About to call SetAPIAddress with %s:%d", listenAddr, port)
 	common.ServiceTracker.SetAPIAddress(fmt.Sprintf("%s:%d", listenAddr, port))
+	serverLogger.Info("[internalapi] Called SetAPIAddress")
 
 	go func() {
 
