@@ -43,7 +43,7 @@ func (p *Plugin) BotInit() {
 	// if err != nil {
 	// 	logger.WithError(err).Errorf("failed clearing all commands")
 	// }
-	// p.startSlashCommandsUpdater()
+	p.startSlashCommandsUpdater()
 
 }
 
