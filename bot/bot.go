@@ -244,7 +244,10 @@ func botReady() {
 	// Initialize all plugins
 	for _, plugin := range common.Plugins {
 		if initBot, ok := plugin.(BotInitHandler); ok {
+			pi := plugin.PluginInfo()
+			logger.Infof("[botReady] Calling BotInit for plugin: %s", pi.Name)
 			initBot.BotInit()
+			logger.Infof("[botReady] Finished BotInit for plugin: %s", pi.Name)
 		}
 	}
 	logger.Info("[botReady] After BotInitHandler loop")
