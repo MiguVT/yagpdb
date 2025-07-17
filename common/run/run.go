@@ -160,6 +160,7 @@ func Run() {
 	if flagRunBot || flagRunEverything {
 		botrest.RegisterPlugin()
 		bot.Run(flagNodeID)
+		log.Info("[run.Run] bot.Run(flagNodeID) returned")
 	}
 
 	if flagRunFeeds != "" || flagRunEverything {
