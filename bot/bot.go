@@ -207,9 +207,12 @@ func readFixedShardingConfig() (id int, count int) {
 
 // called when the bot is ready and the shards have started connecting
 func botReady() {
+	logger.Info("[botReady] START")
+
 	pubsub.AddHandler("bot_status_changed", func(evt *pubsub.Event) {
 		updateAllShardStatuses()
 	}, nil)
+	logger.Info("[botReady] After pubsub.AddHandler")
 
 	memberFetcher = shardmemberfetcher.NewManager(int64(totalShardCount), State, func(guildID int64, userIDs []int64, nonce string) error {
 		shardID := guildShardID(guildID)
@@ -227,6 +230,7 @@ func botReady() {
 
 		return nil
 	}, ReadyTracker)
+	logger.Info("[botReady] After memberFetcher init")
 
 	serviceDetails := "Not using orchestrator"
 	if UsingOrchestrator {
@@ -235,6 +239,7 @@ func botReady() {
 
 	// register us with the service discovery
 	common.ServiceTracker.RegisterService(common.ServiceTypeBot, "Bot", serviceDetails, botServiceDetailsF)
+	logger.Info("[botReady] After ServiceTracker.RegisterService")
 
 	// Initialize all plugins
 	for _, plugin := range common.Plugins {
@@ -242,6 +247,7 @@ func botReady() {
 			initBot.BotInit()
 		}
 	}
+	logger.Info("[botReady] After BotInitHandler loop")
 
 	// Initialize all plugins late
 	for _, plugin := range common.Plugins {
@@ -249,11 +255,14 @@ func botReady() {
 			initBot.LateBotInit()
 		}
 	}
+	logger.Info("[botReady] After LateBotInitHandler loop")
 
 	go runUpdateMetrics()
 	go loopCheckAdmins()
+	logger.Info("[botReady] After starting runUpdateMetrics and loopCheckAdmins goroutines")
 
 	watchMemusage()
+	logger.Info("[botReady] END")
 }
 
 var stopOnce sync.Once
