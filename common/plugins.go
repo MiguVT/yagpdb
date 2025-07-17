@@ -41,9 +41,16 @@ type PluginWithCommonRun interface {
 
 // RunCommonRunPlugins runs plugins that implement PluginWithCommonRun
 func RunCommonRunPlugins() {
-	for _, v := range Plugins {
+	logger.Info("[RunCommonRunPlugins] called, Plugins list:")
+	for i, v := range Plugins {
+		pi := v.PluginInfo()
+		logger.Infof("[RunCommonRunPlugins] Plugin #%d: %s (%T)", i, pi.Name, v)
 		if cast, ok := v.(PluginWithCommonRun); ok {
+		logger.Infof("[RunCommonRunPlugins] Plugin %s implements PluginWithCommonRun, calling CommonRun()", pi.Name)
 			go cast.CommonRun()
+		} else {
+			logger.Infof("[RunCommonRunPlugins] Plugin %s does NOT implement PluginWithCommonRun", pi.Name)
 		}
 	}
+	logger.Info("[RunCommonRunPlugins] finished loop")
 }

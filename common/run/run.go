@@ -172,7 +172,9 @@ func Run() {
 
 	go pubsub.PollEvents()
 
-	common.RunCommonRunPlugins()
+	   log.Info("[main] About to call RunCommonRunPlugins()")
+	   common.RunCommonRunPlugins()
+	   log.Info("[main] Finished RunCommonRunPlugins()")
 
 	common.SetShutdownFunc(shutdown)
 	listenSignal()
