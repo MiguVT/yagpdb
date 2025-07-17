@@ -72,6 +72,13 @@ var (
 
 // Run intializes and starts the discord bot component of yagpdb
 func Run(nodeID string) {
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Errorf("[bot.Run] PANIC RECOVERED: %v", r)
+		}
+		logger.Info("[bot.Run] END OF FUNCTION REACHED")
+	}()
+
 	setup()
 
 	logger.Println("Running bot")
@@ -102,6 +109,8 @@ func Run(nodeID string) {
 		}
 		botReady()
 	}
+
+	logger.Info("[bot.Run] BOTTOM OF FUNCTION (should always see this unless os.Exit or panic)")
 }
 
 func setup() {
